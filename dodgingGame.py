@@ -35,18 +35,6 @@ SCREEN_WIDTH = 1700
 SCREEN_HEIGHT = 900
 
 
-WALKING_SPEED = 2
-RUNNING_SPEED = 4
-
-
-NUMBER_OF_PLAYERS = 1
-NUMBER_OF_BOTS = 15
-
-number_of_units = NUMBER_OF_PLAYERS + NUMBER_OF_BOTS
-
-unit_permutation = random.sample(list(range(number_of_units)), number_of_units)
-
-
 def get_random_guy_sprite_path():
     # assign directory
     directory = 'sprites/guys'
@@ -60,28 +48,30 @@ def get_random_guy_sprite_path():
 # Define the Player object extending pygame.sprite.Sprite
 # Instead of a surface, we use an image for a better looking sprite
 class Player(pg.sprite.Sprite):
-    def __init__(self, player_number):
+    def __init__(self):
         super(Player, self).__init__()
         sprite_path = get_random_guy_sprite_path()
         self.surf = pg.image.load(sprite_path).convert_alpha()
+
+        # self.surf.set_colorkey((255, 255, 255), RLEACCEL)
+
         self.surf = pg.transform.scale(self.surf, (80, 80))
+
         self.mask = pg.mask.from_surface(self.surf)
 
-        # Starting position
-        self.rect = self.surf.get_rect(center=(
-                20,
-                30 + (SCREEN_HEIGHT/number_of_units)*unit_permutation[player_number],
-            ))
+        self.rect = self.surf.get_rect()
 
     # Move the sprite based on keypresses
     def update(self, pressed_keys):
-        speed = WALKING_SPEED
+        speed = 5
         if pressed_keys[K_SPACE] or pressed_keys[K_LSHIFT]:
-            speed = RUNNING_SPEED
+            speed = 10
         if pressed_keys[K_UP] or pressed_keys[K_w]:
             self.rect.move_ip(0, -speed)
+            move_up_sound.play()
         if pressed_keys[K_DOWN] or pressed_keys[K_s]:
             self.rect.move_ip(0, speed)
+            move_down_sound.play()
         if pressed_keys[K_LEFT] or pressed_keys[K_a]:
             self.rect.move_ip(-speed, 0)
         if pressed_keys[K_RIGHT] or pressed_keys[K_d]:
@@ -98,39 +88,33 @@ class Player(pg.sprite.Sprite):
             self.rect.bottom = SCREEN_HEIGHT
 
 
-# Define the bot object extending pg.sprite.Sprite
+# Define the enemy object extending pg.sprite.Sprite
 # Instead of a surface, we use an image for a better looking sprite
-class Bot(pg.sprite.Sprite):
-    def __init__(self, bot_number):
-        super(Bot, self).__init__()
+class Enemy(pg.sprite.Sprite):
+    def __init__(self):
+        super(Enemy, self).__init__()
         sprite_path = get_random_guy_sprite_path()
         self.surf = pg.image.load(sprite_path).convert_alpha()
         self.surf = pg.transform.scale(self.surf, (80, 80))
+
         self.mask = pg.mask.from_surface(self.surf)
 
-        # The starting position
-        self.rect = self.surf.get_rect(center=(
-            40, #TODO why does bots x-axis work different than players'?
-            30 + (SCREEN_HEIGHT / number_of_units) * unit_permutation[bot_number],
-        ))
+        # self.surf.set_colorkey((255, 255, 255), RLEACCEL)
 
-        self.speed = WALKING_SPEED
-        self.moving = False
+        # The starting position is randomly generated, as is the speed
+        self.rect = self.surf.get_rect(
+            center=(
+                random.randint(SCREEN_WIDTH + 20, SCREEN_WIDTH + 100),
+                random.randint(0, SCREEN_HEIGHT),
+            )
+        )
+        self.speed = random.randint(1, 5)
 
-    # Move the bot based on speed
+    # Move the enemy based on speed
     # Remove it when it passes the left edge of the screen
     def update(self):
-        start_moving_probability = 0.005
-        if random.uniform(0, 1) < start_moving_probability:
-            self.moving = True
-
-        stop_moving_probability = 0.05
-        if random.uniform(0, 1) < stop_moving_probability:
-            self.moving = False
-
-        if self.moving:
-            self.rect.move_ip(self.speed, 0)
-        if self.rect.right > SCREEN_WIDTH:
+        self.rect.move_ip(-self.speed, 0)
+        if self.rect.right < 0:
             self.kill()
 
 
@@ -157,18 +141,16 @@ class Cloud(pg.sprite.Sprite):
         # The starting position is randomly generated
         self.rect = self.surf.get_rect(
             center=(
-                0,
+                random.randint(SCREEN_WIDTH + 20, SCREEN_WIDTH + 100),
                 random.randint(0, SCREEN_HEIGHT),
             )
         )
-        self.speed = random.randint(1, 5)
-
 
     # Move the cloud based on a constant speed
     # Remove it when it passes the left edge of the screen
     def update(self):
-        self.rect.move_ip(self.speed, 0)
-        if self.rect.right > SCREEN_WIDTH:
+        self.rect.move_ip(-5, 0)
+        if self.rect.right < 0:
             self.kill()
 
 
@@ -185,44 +167,42 @@ clock = pg.time.Clock()
 # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
 screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-# Create custom events for adding a cloud
+# Create custom events for adding a new enemy and cloud
+ADDENEMY = pg.USEREVENT + 1
+pg.time.set_timer(ADDENEMY, 250)
 ADDCLOUD = pg.USEREVENT + 2
 pg.time.set_timer(ADDCLOUD, 1000)
 
-# Create players
-player = Player(0)
+# Create our 'player'
+player = Player()
 
 line_sprite = Line()
 
-# Create groups to hold bot sprites, cloud sprites, and all sprites
-# - bots is used for collision detection and position updates
+# Create groups to hold enemy sprites, cloud sprites, and all sprites
+# - enemies is used for collision detection and position updates
 # - clouds is used for position updates
 # - all_sprites isused for rendering
-bots = pg.sprite.Group()
+enemies = pg.sprite.Group()
 clouds = pg.sprite.Group()
 all_sprites = pg.sprite.Group()
 all_sprites.add(player)
 all_sprites.add(line_sprite)
 
-# Create bots
-for i in range(NUMBER_OF_PLAYERS, NUMBER_OF_BOTS+1):
-    print(i)
-    new_bot = Bot(i)
-    bots.add(new_bot)
-    all_sprites.add(new_bot)
-
-
 # Load and play our background music
 # Sound source: http://ccmixter.org/files/Apoxode/59262
 # License: https://creativecommons.org/licenses/by/3.0/
-# pg.mixer.music.load("simplePlaneGame/Apoxode_-_Electric_1.mp3")
-# pg.mixer.music.play(loops=-1)
+pg.mixer.music.load("simplePlaneGame/Apoxode_-_Electric_1.mp3")
+pg.mixer.music.play(loops=-1)
 
 # Load all our sound files
 # Sound sources: Jon Fincher
+move_up_sound = pg.mixer.Sound("simplePlaneGame/Rising_putter.ogg")
+move_down_sound = pg.mixer.Sound("simplePlaneGame/Falling_putter.ogg")
 collision_sound = pg.mixer.Sound("simplePlaneGame/Collision.ogg")
 
 # Set the base volume for all sounds
+move_up_sound.set_volume(0.5)
+move_down_sound.set_volume(0.5)
 collision_sound.set_volume(0.5)
 
 
@@ -260,6 +240,13 @@ while running:
         elif event.type == QUIT:
             running = False
 
+        # Should we add a new enemy?
+        elif event.type == ADDENEMY:
+            # Create the new enemy, and add it to our sprite groups
+            new_enemy = Enemy()
+            enemies.add(new_enemy)
+            all_sprites.add(new_enemy)
+
         # Should we add a new cloud?
         elif event.type == ADDCLOUD:
             # Create the new cloud, and add it to our sprite groups
@@ -277,21 +264,20 @@ while running:
             if touching_player:
                 player.kill()
                 print("Suicide!")
-                break # break so you can't kill yourself and another with the same shot
 
-            for bot in bots:
-                pos_in_mask = pos[0] - bot.rect.x, pos[1] - bot.rect.y
-                touching_bot = bot.rect.collidepoint(*pos) and bot.mask.get_at(pos_in_mask)
-                if touching_bot:
-                    bot.kill()
+            for enemy in enemies:
+                pos_in_mask = pos[0] - enemy.rect.x, pos[1] - enemy.rect.y
+                touching_enemy = enemy.rect.collidepoint(*pos) and enemy.mask.get_at(pos_in_mask)
+                if touching_enemy:
+                    enemy.kill()
                     break
 
     # Get the set of keys pressed and check for user input
     pressed_keys = pg.key.get_pressed()
     player.update(pressed_keys)
 
-    # Update the position of our bots and clouds
-    bots.update()
+    # Update the position of our enemies and clouds
+    enemies.update()
     clouds.update()
 
     # Fill the screen with sky blue
@@ -302,6 +288,20 @@ while running:
     for entity in all_sprites:
         screen.blit(entity.surf, entity.rect)
 
+    # # Check if any enemies have collided with the player
+    for enemy in enemies:
+        if pg.sprite.collide_mask(player, enemy):
+            # If so, remove the player
+            player.kill()
+            print("You died.")
+
+            # Stop any moving sounds and play the collision sound
+            move_up_sound.stop()
+            move_down_sound.stop()
+            collision_sound.play()
+
+            # Stop the loop
+            running = False
 
 
     if pg.sprite.collide_mask(line_sprite, player):
