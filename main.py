@@ -169,21 +169,40 @@ class Scope(pg.sprite.Sprite):
             self.rect.move_ip(-speed, 0)
         if pressed_keys[right_key]:
             self.rect.move_ip(speed, 0)
-
         if pressed_keys[up_key]:
             self.rect.move_ip(0, -speed)
         if pressed_keys[down_key]:
             self.rect.move_ip(0, speed)
 
         # Keep scope on the screen
-        if self.rect.left < 0:
-            self.rect.left = 0
-        elif self.rect.right > SCREEN_WIDTH:
-            self.rect.right = SCREEN_WIDTH
-        if self.rect.top <= 0:
-            self.rect.top = 0
-        elif self.rect.bottom >= SCREEN_HEIGHT:
-            self.rect.bottom = SCREEN_HEIGHT
+        print(self.rect.center)
+        if self.rect.center[0] < 0:
+            self.rect.center = (0, self.rect.center[1])
+        elif self.rect.center[0] > SCREEN_WIDTH:
+            self.rect.center = self.rect.center = (SCREEN_WIDTH, self.rect.center[1])
+        if self.rect.center[1] <= 0:
+            self.rect.center = (self.rect.center[0], 0)
+        elif self.rect.center[1] >= SCREEN_HEIGHT:
+            self.rect.center = (self.rect.center[0], SCREEN_HEIGHT)
+
+        # Shooting
+        if pressed_keys[shoot_key]:
+            center_pos = self.rect.center
+            collision_sound.play()
+
+            for player in players:
+                pos_in_mask = center_pos[0] - player.rect.x, center_pos[1] - player.rect.y
+                touching_player = player.rect.collidepoint(*center_pos) and player.mask.get_at(pos_in_mask)
+                if touching_player:
+                    player.kill()
+                    break  # break so you can't kill yourself and another with the same shot
+
+            for bot in bots:
+                pos_in_mask = center_pos[0] - bot.rect.x, center_pos[1] - bot.rect.y
+                touching_bot = bot.rect.collidepoint(*center_pos) and bot.mask.get_at(pos_in_mask)
+                if touching_bot:
+                    bot.kill()
+                    break
 
 
 # Define the bot object extending pg.sprite.Sprite
@@ -198,7 +217,7 @@ class Bot(pg.sprite.Sprite):
 
         # The starting position
         self.rect = self.surf.get_rect(center=(
-            40,  # TODO why does bots x-axis work different than players'?
+            40,  # TODO why does bots x-axis work different than players?
             30 + (SCREEN_HEIGHT / number_of_units) * unit_permutation[bot_number],
         ))
 
@@ -206,7 +225,6 @@ class Bot(pg.sprite.Sprite):
         self.moving = False
 
     # Move the bot based on speed
-    # Remove it when it passes the left edge of the screen
     def update(self):
         start_moving_probability = 0.005
         if random.uniform(0, 1) < start_moving_probability:
@@ -218,8 +236,6 @@ class Bot(pg.sprite.Sprite):
 
         if self.moving:
             self.rect.move_ip(self.speed, 0)
-        if self.rect.right > SCREEN_WIDTH:
-            self.kill()
 
 
 class Line(pg.sprite.Sprite):
@@ -251,7 +267,7 @@ class Cloud(pg.sprite.Sprite):
         self.speed = random.randint(1, 5)
 
     # Move the cloud based on a constant speed
-    # Remove it when it passes the left edge of the screen
+    # Remove it when it passes the right edge of the screen
     def update(self):
         self.rect.move_ip(self.speed, 0)
         if self.rect.right > SCREEN_WIDTH:
@@ -338,6 +354,11 @@ def set_custom_cursor():
 
 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_CROSSHAIR)
 
+bg = pg.image.load("background1.jpeg")
+
+
+
+
 # Variable to keep our main loop running
 running = True
 
@@ -372,7 +393,6 @@ while running:
                 touching_player = player.rect.collidepoint(*mouse_pos) and player.mask.get_at(pos_in_mask)
                 if touching_player:
                     player.kill()
-                    print("Suicide!")
                     break  # break so you can't kill yourself and another with the same shot
 
             for bot in bots:
@@ -406,6 +426,9 @@ while running:
 
     # Fill the screen with sky blue.....................
     screen.fill((135, 206, 250))
+
+
+    screen.blit(bg, (0, 0))
 
     # Draw all our sprites
     for entity in all_sprites:
