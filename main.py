@@ -19,6 +19,14 @@ from pygame.locals import (
     K_a,
     K_s,
     K_d,
+    K_r,
+    K_e,
+    K_t,
+    K_y,
+    K_q,
+    K_COMMA,
+    K_MINUS,
+    K_PERIOD,
     K_SPACE,
     K_LSHIFT,
     K_ESCAPE,
@@ -29,17 +37,14 @@ from pygame.locals import (
 # Colors
 red = (255, 0, 0)
 
-
 # Define constants for the screen width and height
 SCREEN_WIDTH = 1700
 SCREEN_HEIGHT = 900
 
-
 WALKING_SPEED = 2
 RUNNING_SPEED = 4
 
-
-NUMBER_OF_PLAYERS = 1
+NUMBER_OF_PLAYERS = 2
 NUMBER_OF_BOTS = 15
 
 number_of_units = NUMBER_OF_PLAYERS + NUMBER_OF_BOTS
@@ -56,6 +61,13 @@ def get_random_guy_sprite_path():
     f = os.path.join(directory, random_file)
     return f
 
+def get_scope_path(player_number):
+    directory = 'sprites/scopes'
+    filenames = os.listdir(directory)
+    file = filenames[player_number]
+    f = os.path.join(directory, file)
+    return f
+
 
 # Define the Player object extending pygame.sprite.Sprite
 # Instead of a surface, we use an image for a better looking sprite
@@ -64,30 +76,106 @@ class Player(pg.sprite.Sprite):
         super(Player, self).__init__()
         sprite_path = get_random_guy_sprite_path()
         self.surf = pg.image.load(sprite_path).convert_alpha()
-        self.surf = pg.transform.scale(self.surf, (80, 80))
+        self.surf = pg.transform.scale(self.surf, (59, 50))
         self.mask = pg.mask.from_surface(self.surf)
+        self.player_number = player_number
 
         # Starting position
         self.rect = self.surf.get_rect(center=(
-                20,
-                30 + (SCREEN_HEIGHT/number_of_units)*unit_permutation[player_number],
-            ))
+            20,
+            30 + (SCREEN_HEIGHT / number_of_units) * unit_permutation[player_number],
+        ))
 
     # Move the sprite based on keypresses
     def update(self, pressed_keys):
         speed = WALKING_SPEED
-        if pressed_keys[K_SPACE] or pressed_keys[K_LSHIFT]:
+
+        # Player 1
+        left_key = K_r
+        right_key = K_y
+        running_key = K_t
+
+        # Player 2
+        if self.player_number == 1:
+            left_key = K_COMMA
+            right_key = K_MINUS
+            running_key = K_PERIOD
+
+        if pressed_keys[running_key]:
             speed = RUNNING_SPEED
-        if pressed_keys[K_UP] or pressed_keys[K_w]:
-            self.rect.move_ip(0, -speed)
-        if pressed_keys[K_DOWN] or pressed_keys[K_s]:
-            self.rect.move_ip(0, speed)
-        if pressed_keys[K_LEFT] or pressed_keys[K_a]:
+
+        if pressed_keys[left_key]:
             self.rect.move_ip(-speed, 0)
-        if pressed_keys[K_RIGHT] or pressed_keys[K_d]:
+        if pressed_keys[right_key]:
             self.rect.move_ip(speed, 0)
 
+        # if pressed_keys[K_UP] or pressed_keys[K_w]:
+        #     self.rect.move_ip(0, -speed)
+        # if pressed_keys[K_DOWN] or pressed_keys[K_s]:
+        #     self.rect.move_ip(0, speed)
+
         # Keep player on the screen
+        if self.rect.left < 0:
+            self.rect.left = 0
+        elif self.rect.right > SCREEN_WIDTH:
+            self.rect.right = SCREEN_WIDTH
+        if self.rect.top <= 0:
+            self.rect.top = 0
+        elif self.rect.bottom >= SCREEN_HEIGHT:
+            self.rect.bottom = SCREEN_HEIGHT
+
+
+# Define the a gun scope object extending pygame.sprite.Sprite
+# Instead of a surface, we use an image for a better looking sprite
+class Scope(pg.sprite.Sprite):
+    def __init__(self, player_number):
+        super(Scope, self).__init__()
+        sprite_path = get_scope_path(player_number)
+        self.surf = pg.image.load(sprite_path)
+
+        self.surf.set_colorkey((255, 255, 255), RLEACCEL)
+
+        self.surf = pg.transform.scale(self.surf, (80, 80))
+        self.mask = pg.mask.from_surface(self.surf)
+        self.player_number = player_number
+
+        # Starting position
+        self.rect = self.surf.get_rect(center=(
+            300,
+            30 + (SCREEN_HEIGHT / NUMBER_OF_PLAYERS) * player_number,
+        ))
+
+    # Move the sprite based on keypresses
+    def update(self, pressed_keys):
+        speed = 9
+
+        # Player 1
+        left_key = K_a
+        right_key = K_d
+        up_key = K_w
+        down_key = K_s
+        shoot_key = K_q
+
+        # Player 2
+        if self.player_number == 1:
+            left_key = K_LEFT
+            right_key = K_RIGHT
+            up_key = K_UP
+            down_key = K_DOWN
+            shoot_key = K_SPACE
+
+
+        if pressed_keys[left_key]:
+            self.rect.move_ip(-speed, 0)
+        if pressed_keys[right_key]:
+            self.rect.move_ip(speed, 0)
+
+        if pressed_keys[up_key]:
+            self.rect.move_ip(0, -speed)
+        if pressed_keys[down_key]:
+            self.rect.move_ip(0, speed)
+
+        # Keep scope on the screen
         if self.rect.left < 0:
             self.rect.left = 0
         elif self.rect.right > SCREEN_WIDTH:
@@ -105,12 +193,12 @@ class Bot(pg.sprite.Sprite):
         super(Bot, self).__init__()
         sprite_path = get_random_guy_sprite_path()
         self.surf = pg.image.load(sprite_path).convert_alpha()
-        self.surf = pg.transform.scale(self.surf, (80, 80))
+        self.surf = pg.transform.scale(self.surf, (59, 50))
         self.mask = pg.mask.from_surface(self.surf)
 
         # The starting position
         self.rect = self.surf.get_rect(center=(
-            40, #TODO why does bots x-axis work different than players'?
+            40,  # TODO why does bots x-axis work different than players'?
             30 + (SCREEN_HEIGHT / number_of_units) * unit_permutation[bot_number],
         ))
 
@@ -146,7 +234,6 @@ class Line(pg.sprite.Sprite):
         self.image = self.surf
 
 
-
 # Define the cloud object extending pg.sprite.Sprite
 # Use an image for a better looking sprite
 class Cloud(pg.sprite.Sprite):
@@ -162,7 +249,6 @@ class Cloud(pg.sprite.Sprite):
             )
         )
         self.speed = random.randint(1, 5)
-
 
     # Move the cloud based on a constant speed
     # Remove it when it passes the left edge of the screen
@@ -189,9 +275,6 @@ screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 ADDCLOUD = pg.USEREVENT + 2
 pg.time.set_timer(ADDCLOUD, 1000)
 
-# Create players
-player = Player(0)
-
 line_sprite = Line()
 
 # Create groups to hold bot sprites, cloud sprites, and all sprites
@@ -199,18 +282,30 @@ line_sprite = Line()
 # - clouds is used for position updates
 # - all_sprites isused for rendering
 bots = pg.sprite.Group()
+players = pg.sprite.Group()
+scopes = pg.sprite.Group()
 clouds = pg.sprite.Group()
 all_sprites = pg.sprite.Group()
-all_sprites.add(player)
 all_sprites.add(line_sprite)
 
 # Create bots
-for i in range(NUMBER_OF_PLAYERS, NUMBER_OF_BOTS+1):
+for i in range(NUMBER_OF_PLAYERS, number_of_units):
     print(i)
     new_bot = Bot(i)
     bots.add(new_bot)
     all_sprites.add(new_bot)
 
+# Create players and scopes
+for i in range(0, NUMBER_OF_PLAYERS):
+    print(i)
+    new_player = Player(i)
+    new_scope = Scope(i)
+
+    players.add(new_player)
+    scopes.add(new_scope)
+
+    all_sprites.add(new_player)
+    all_sprites.add(new_scope)
 
 # Load and play our background music
 # Sound source: http://ccmixter.org/files/Apoxode/59262
@@ -269,45 +364,52 @@ while running:
 
         # Kill if you click on a guy
         elif event.type == pg.MOUSEBUTTONDOWN:
-            pos = pg.mouse.get_pos()
+            mouse_pos = pg.mouse.get_pos()
             collision_sound.play()
 
-            pos_in_mask = pos[0] - player.rect.x, pos[1] - player.rect.y
-            touching_player = player.rect.collidepoint(*pos) and player.mask.get_at(pos_in_mask)
-            if touching_player:
-                player.kill()
-                print("Suicide!")
-                break # break so you can't kill yourself and another with the same shot
+            for player in players:
+                pos_in_mask = mouse_pos[0] - player.rect.x, mouse_pos[1] - player.rect.y
+                touching_player = player.rect.collidepoint(*mouse_pos) and player.mask.get_at(pos_in_mask)
+                if touching_player:
+                    player.kill()
+                    print("Suicide!")
+                    break  # break so you can't kill yourself and another with the same shot
 
             for bot in bots:
-                pos_in_mask = pos[0] - bot.rect.x, pos[1] - bot.rect.y
-                touching_bot = bot.rect.collidepoint(*pos) and bot.mask.get_at(pos_in_mask)
+                pos_in_mask = mouse_pos[0] - bot.rect.x, mouse_pos[1] - bot.rect.y
+                touching_bot = bot.rect.collidepoint(*mouse_pos) and bot.mask.get_at(pos_in_mask)
                 if touching_bot:
                     bot.kill()
                     break
 
     # Get the set of keys pressed and check for user input
     pressed_keys = pg.key.get_pressed()
-    player.update(pressed_keys)
+    for player in players:
+        player.update(pressed_keys)
+
+        if pg.sprite.collide_mask(line_sprite, player):
+            print("Player", player.player_number + 1, "WINS!!!")
+            running = False
+
+    # Check if a bot has won
+    for bot in bots:
+        if pg.sprite.collide_mask(line_sprite, bot):
+            print("THE BOT WINS!!!")
+            running = False
+
+    for scope in scopes:
+        scope.update(pressed_keys)
 
     # Update the position of our bots and clouds
     bots.update()
     clouds.update()
 
-    # Fill the screen with sky blue
+    # Fill the screen with sky blue.....................
     screen.fill((135, 206, 250))
-
 
     # Draw all our sprites
     for entity in all_sprites:
         screen.blit(entity.surf, entity.rect)
-
-
-
-    if pg.sprite.collide_mask(line_sprite, player):
-        print("YOU WIN!!!")
-        running = False
-
 
     # Flip everything to the display
     pg.display.flip()
