@@ -36,6 +36,7 @@ from pygame.locals import (
 
 # Colors
 red = (255, 0, 0)
+black = (0, 0, 0)
 
 # Define constants for the screen width and height
 SCREEN_WIDTH = 1700
@@ -60,6 +61,7 @@ def get_random_guy_sprite_path():
     random_file = filenames[random.randint(0, len(filenames) - 1)]
     f = os.path.join(directory, random_file)
     return f
+
 
 def get_scope_path(player_number):
     directory = 'sprites/scopes'
@@ -145,6 +147,10 @@ class Scope(pg.sprite.Sprite):
             30 + (SCREEN_HEIGHT / NUMBER_OF_PLAYERS) * player_number,
         ))
 
+        # Number of shots
+        self.my_font = pg.font.SysFont("Times New Roman", 18)
+        self.number_of_shots = 1
+
     # Move the sprite based on keypresses
     def update(self, pressed_keys):
         speed = 9
@@ -164,7 +170,6 @@ class Scope(pg.sprite.Sprite):
             down_key = K_DOWN
             shoot_key = K_SPACE
 
-
         if pressed_keys[left_key]:
             self.rect.move_ip(-speed, 0)
         if pressed_keys[right_key]:
@@ -175,7 +180,6 @@ class Scope(pg.sprite.Sprite):
             self.rect.move_ip(0, speed)
 
         # Keep scope on the screen
-        print(self.rect.center)
         if self.rect.center[0] < 0:
             self.rect.center = (0, self.rect.center[1])
         elif self.rect.center[0] > SCREEN_WIDTH:
@@ -186,7 +190,7 @@ class Scope(pg.sprite.Sprite):
             self.rect.center = (self.rect.center[0], SCREEN_HEIGHT)
 
         # Shooting
-        if pressed_keys[shoot_key]:
+        if pressed_keys[shoot_key] and self.number_of_shots > 0:
             center_pos = self.rect.center
             collision_sound.play()
 
@@ -203,6 +207,12 @@ class Scope(pg.sprite.Sprite):
                 if touching_bot:
                     bot.kill()
                     break
+
+            self.number_of_shots -= 1
+
+        # Number of shots
+        number_of_shots_display = self.my_font.render(str(self.number_of_shots), True, black)
+        screen.blit(number_of_shots_display, (self.rect.bottomleft[0] + 10, self.rect.bottomleft[1] - 10))
 
 
 # Define the bot object extending pg.sprite.Sprite
@@ -306,14 +316,12 @@ all_sprites.add(line_sprite)
 
 # Create bots
 for i in range(NUMBER_OF_PLAYERS, number_of_units):
-    print(i)
     new_bot = Bot(i)
     bots.add(new_bot)
     all_sprites.add(new_bot)
 
 # Create players and scopes
 for i in range(0, NUMBER_OF_PLAYERS):
-    print(i)
     new_player = Player(i)
     new_scope = Scope(i)
 
@@ -356,14 +364,14 @@ pg.mouse.set_cursor(pg.SYSTEM_CURSOR_CROSSHAIR)
 
 bg = pg.image.load("background1.jpeg")
 
-
-
-
 # Variable to keep our main loop running
 running = True
 
 # Our main loop
 while running:
+
+    screen.blit(bg, (0, 0))
+
     # Look at every event in the queue
     for event in pg.event.get():
         # Did the user hit a key?
@@ -425,10 +433,8 @@ while running:
     clouds.update()
 
     # Fill the screen with sky blue.....................
-    screen.fill((135, 206, 250))
+    # screen.fill((135, 206, 250))
 
-
-    screen.blit(bg, (0, 0))
 
     # Draw all our sprites
     for entity in all_sprites:
