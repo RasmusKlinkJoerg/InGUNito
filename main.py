@@ -8,31 +8,37 @@ import os
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
-# from pygame.locals import *
-from pygame.locals import (
-    RLEACCEL,
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
-    K_w,
-    K_a,
-    K_s,
-    K_d,
-    K_r,
-    K_e,
-    K_t,
-    K_y,
-    K_q,
-    K_COMMA,
-    K_MINUS,
-    K_PERIOD,
-    K_SPACE,
-    K_LSHIFT,
-    K_ESCAPE,
-    KEYDOWN,
-    QUIT,
-)
+from pygame.locals import *
+
+# from pygame.locals import (
+#     RLEACCEL,
+#     K_UP,
+#     K_DOWN,
+#     K_LEFT,
+#     K_RIGHT,
+#     K_w,
+#     K_a,
+#     K_s,
+#     K_d,
+#     K_r,
+#     K_e,
+#     K_t,
+#     K_y,
+#     K_q,
+#     K_COMMA,
+#     K_MINUS,
+#     K_PERIOD,
+#     K_SPACE,
+#     K_LSHIFT,
+#     K_ESCAPE,
+#     KEYDOWN,
+#     QUIT,
+# )
+
+pg.joystick.init()
+joysticks = [pg.joystick.Joystick(i) for i in range(pg.joystick.get_count())]
+for joystick in joysticks:
+    print(joystick.get_name())
 
 # Colors
 red = (255, 0, 0)
@@ -45,7 +51,7 @@ SCREEN_HEIGHT = 900
 WALKING_SPEED = 2
 RUNNING_SPEED = 4
 
-NUMBER_OF_PLAYERS = 2
+NUMBER_OF_PLAYERS = 3
 NUMBER_OF_BOTS = 15
 
 number_of_units = NUMBER_OF_PLAYERS + NUMBER_OF_BOTS
@@ -73,6 +79,7 @@ def get_scope_path(player_number):
 
 # Define the Player object extending pygame.sprite.Sprite
 # Instead of a surface, we use an image for a better looking sprite
+motionP3 = [0, 0]
 class Player(pg.sprite.Sprite):
     def __init__(self, player_number):
         super(Player, self).__init__()
@@ -81,6 +88,7 @@ class Player(pg.sprite.Sprite):
         self.surf = pg.transform.scale(self.surf, (59, 50))
         self.mask = pg.mask.from_surface(self.surf)
         self.player_number = player_number
+
 
         # Starting position
         self.rect = self.surf.get_rect(center=(
@@ -102,6 +110,21 @@ class Player(pg.sprite.Sprite):
             left_key = K_COMMA
             right_key = K_MINUS
             running_key = K_PERIOD
+
+        # Player 3
+
+        if self.player_number == 2:
+            if event.type == JOYAXISMOTION:
+                if event.axis < 2:
+                    motionP3[event.axis] = event.value
+
+            if abs(motionP3[0]) < 0.1:
+                motionP3[0] = 0
+            if abs(motion[1]) < 0.1:
+                motionP3[1] = 0
+            self.rect.move_ip(motionP3[0] * 10, motionP3[1] * 10)
+            # self.rect.y += motion[1] * 10
+
 
         if pressed_keys[running_key]:
             speed = RUNNING_SPEED
@@ -199,7 +222,11 @@ class Scope(pg.sprite.Sprite):
                 touching_player = player.rect.collidepoint(*center_pos) and player.mask.get_at(pos_in_mask)
                 if touching_player:
                     player.kill()
-                    break  # break so you can't kill yourself and another with the same shot
+
+                    for scope in scopes:
+                        if scope.player_number == player.player_number:
+                            scope.kill()
+                    break  # break so you can't kill multiple units with the same shot
 
             for bot in bots:
                 pos_in_mask = center_pos[0] - bot.rect.x, center_pos[1] - bot.rect.y
@@ -367,10 +394,23 @@ bg = pg.image.load("background1.jpeg")
 # Variable to keep our main loop running
 running = True
 
+my_square = pg.Rect(50, 50, 50, 50)
+my_square_color = 0
+colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+motion = [0, 0]
+
 # Our main loop
 while running:
 
     screen.blit(bg, (0, 0))
+
+    pg.draw.rect(screen, colors[my_square_color], my_square)
+    if abs(motion[0]) < 0.1:
+        motion[0] = 0
+    if abs(motion[1]) < 0.1:
+        motion[1] = 0
+    my_square.x += motion[0] * 10
+    my_square.y += motion[1] * 10
 
     # Look at every event in the queue
     for event in pg.event.get():
@@ -410,6 +450,26 @@ while running:
                     bot.kill()
                     break
 
+
+        elif event.type == JOYBUTTONDOWN:
+            print(event)
+            if event.button == 0:
+                my_square_color = (my_square_color + 1) % len(colors)
+        elif event.type == JOYBUTTONUP:
+            print(event)
+        elif event.type == JOYAXISMOTION:
+            print(event)
+            if event.axis < 2:
+                motion[event.axis] = event.value
+        elif event.type == JOYHATMOTION:
+            print(event)
+        elif event.type == JOYDEVICEADDED:
+            joysticks = [pg.joystick.Joystick(i) for i in range(pg.joystick.get_count())]
+            for joystick in joysticks:
+                print(joystick.get_name())
+        elif event.type == JOYDEVICEREMOVED:
+            joysticks = [pg.joystick.Joystick(i) for i in range(pg.joystick.get_count())]
+
     # Get the set of keys pressed and check for user input
     pressed_keys = pg.key.get_pressed()
     for player in players:
@@ -434,7 +494,6 @@ while running:
 
     # Fill the screen with sky blue.....................
     # screen.fill((135, 206, 250))
-
 
     # Draw all our sprites
     for entity in all_sprites:
