@@ -45,13 +45,13 @@ red = (255, 0, 0)
 black = (0, 0, 0)
 
 # Define constants for the screen width and height
-SCREEN_WIDTH = 1700
-SCREEN_HEIGHT = 900
+SCREEN_WIDTH = 1200#1700
+SCREEN_HEIGHT = 700#900
 
 WALKING_SPEED = 2
 RUNNING_SPEED = 4
 
-NUMBER_OF_PLAYERS = 3
+NUMBER_OF_PLAYERS = 4
 NUMBER_OF_BOTS = 15
 
 number_of_units = NUMBER_OF_PLAYERS + NUMBER_OF_BOTS
@@ -80,6 +80,9 @@ def get_scope_path(player_number):
 # Define the Player object extending pygame.sprite.Sprite
 # Instead of a surface, we use an image for a better looking sprite
 motionP3 = [0, 0]
+motionP4 = [0, 0]
+
+
 class Player(pg.sprite.Sprite):
     def __init__(self, player_number):
         super(Player, self).__init__()
@@ -89,7 +92,6 @@ class Player(pg.sprite.Sprite):
         self.mask = pg.mask.from_surface(self.surf)
         self.player_number = player_number
 
-
         # Starting position
         self.rect = self.surf.get_rect(center=(
             20,
@@ -97,47 +99,50 @@ class Player(pg.sprite.Sprite):
         ))
 
     # Move the sprite based on keypresses
-    def update(self, pressed_keys):
+    def update(self, pressed_keys=None, player_motion=None, move_fast=False):
+        if pressed_keys is None:
+            pressed_keys = []
+        if player_motion is None:
+            player_motion = [0, 0]
+
         speed = WALKING_SPEED
 
-        # Player 1
-        left_key = K_r
-        right_key = K_y
-        running_key = K_t
+        #### Players controlled with Joystick
 
-        # Player 2
-        if self.player_number == 1:
+        if move_fast:
+            speed = RUNNING_SPEED
+
+        # print("Speed", speed)
+        # Player 1
+        # if self.player_number == 0:
+        self.rect.move_ip(player_motion[0]*speed, player_motion[1]*speed)
+
+
+        ####Players controlled with keyboard
+        if pressed_keys:
+            # Player 2
             left_key = K_COMMA
             right_key = K_MINUS
             running_key = K_PERIOD
 
-        # Player 3
+            # Player 3
+            if self.player_number == 2:
+                left_key = K_r
+                right_key = K_y
+                running_key = K_t
 
-        if self.player_number == 2:
-            if event.type == JOYAXISMOTION:
-                if event.axis < 2:
-                    motionP3[event.axis] = event.value
+            if pressed_keys[running_key]:
+                speed = RUNNING_SPEED
 
-            if abs(motionP3[0]) < 0.1:
-                motionP3[0] = 0
-            if abs(motion[1]) < 0.1:
-                motionP3[1] = 0
-            self.rect.move_ip(motionP3[0] * 10, motionP3[1] * 10)
-            # self.rect.y += motion[1] * 10
+            if pressed_keys[left_key]:
+                self.rect.move_ip(-speed, 0)
+            if pressed_keys[right_key]:
+                self.rect.move_ip(speed, 0)
 
-
-        if pressed_keys[running_key]:
-            speed = RUNNING_SPEED
-
-        if pressed_keys[left_key]:
-            self.rect.move_ip(-speed, 0)
-        if pressed_keys[right_key]:
-            self.rect.move_ip(speed, 0)
-
-        # if pressed_keys[K_UP] or pressed_keys[K_w]:
-        #     self.rect.move_ip(0, -speed)
-        # if pressed_keys[K_DOWN] or pressed_keys[K_s]:
-        #     self.rect.move_ip(0, speed)
+            # if pressed_keys[K_UP] or pressed_keys[K_w]:
+            #     self.rect.move_ip(0, -speed)
+            # if pressed_keys[K_DOWN] or pressed_keys[K_s]:
+            #     self.rect.move_ip(0, speed)
 
         # Keep player on the screen
         if self.rect.left < 0:
@@ -348,12 +353,17 @@ for i in range(NUMBER_OF_PLAYERS, number_of_units):
     all_sprites.add(new_bot)
 
 # Create players and scopes
+player_map = {}
+scope_map = {}
 for i in range(0, NUMBER_OF_PLAYERS):
     new_player = Player(i)
     new_scope = Scope(i)
 
     players.add(new_player)
     scopes.add(new_scope)
+
+    player_map[i] = new_player
+    scope_map[i] = new_scope
 
     all_sprites.add(new_player)
     all_sprites.add(new_scope)
@@ -399,18 +409,37 @@ my_square_color = 0
 colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
 motion = [0, 0]
 
+my_square2 = pg.Rect(100, 100, 50, 50)
+my_square_color2 = 0
+colors2 = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+motion2 = [0, 0]
+
 # Our main loop
 while running:
 
     screen.blit(bg, (0, 0))
 
     pg.draw.rect(screen, colors[my_square_color], my_square)
+    pg.draw.rect(screen, colors[my_square_color2], my_square2)
+
     if abs(motion[0]) < 0.1:
         motion[0] = 0
     if abs(motion[1]) < 0.1:
         motion[1] = 0
     my_square.x += motion[0] * 10
     my_square.y += motion[1] * 10
+
+    if abs(motion2[0]) < 0.1:
+        motion2[0] = 0
+    if abs(motion2[1]) < 0.1:
+        motion2[1] = 0
+    my_square2.x += motion2[0] * 10
+    my_square2.y += motion2[1] * 10
+
+
+    if joysticks != []:
+        player_map[0].update(player_motion=motion, move_fast=joysticks[0].get_button(0))
+        player_map[1].update(player_motion=motion2, move_fast=joysticks[1].get_button(0))
 
     # Look at every event in the queue
     for event in pg.event.get():
@@ -453,22 +482,49 @@ while running:
 
         elif event.type == JOYBUTTONDOWN:
             print(event)
-            if event.button == 0:
+
+            if joysticks[0].get_button(0):
                 my_square_color = (my_square_color + 1) % len(colors)
-        elif event.type == JOYBUTTONUP:
-            print(event)
+            if joysticks[1].get_button(0):
+                my_square_color2 = (my_square_color2 + 1) % len(colors)
+
+
+        # elif event.type == JOYBUTTONDOWN:
+        #     print(event)
+        #     if event.button == 0:
+        #         my_square_color = (my_square_color + 1) % len(colors)
+        # elif event.type == JOYBUTTONUP:
+        #     print(event)
         elif event.type == JOYAXISMOTION:
-            print(event)
-            if event.axis < 2:
-                motion[event.axis] = event.value
+
+            if pg.joystick.Joystick(0).get_axis(0):
+                print(event)
+                if event.axis < 2:
+                    motion[event.axis] = event.value
+            if pg.joystick.Joystick(1).get_button(0):
+                print(event)
+                if event.axis < 2:
+                    motion2[event.axis] = event.value
+
+            motion = [joysticks[0].get_axis(0), pg.joystick.Joystick(0).get_axis(1)]
+            motion2 = [joysticks[1].get_axis(0), pg.joystick.Joystick(1).get_axis(1)]
+
+
+            # print("motion", motion)
+            # print("motion2", motion2)
+
         elif event.type == JOYHATMOTION:
             print(event)
-        elif event.type == JOYDEVICEADDED:
-            joysticks = [pg.joystick.Joystick(i) for i in range(pg.joystick.get_count())]
-            for joystick in joysticks:
-                print(joystick.get_name())
-        elif event.type == JOYDEVICEREMOVED:
-            joysticks = [pg.joystick.Joystick(i) for i in range(pg.joystick.get_count())]
+        # elif event.type == JOYDEVICEADDED:
+        #     joysticks = [pg.joystick.Joystick(i) for i in range(pg.joystick.get_count())]
+        #     for joystick in joysticks:
+        #         print(joystick.get_name())
+        # elif event.type == JOYDEVICEREMOVED:
+        #     joysticks = [pg.joystick.Joystick(i) for i in range(pg.joystick.get_count())]
+
+        # for i, joystick in enumerate(joysticks):
+        #     motion = [joystick.get_axis(0), joystick.get_axis(1)]
+        #     player_map[1+i]
 
     # Get the set of keys pressed and check for user input
     pressed_keys = pg.key.get_pressed()
