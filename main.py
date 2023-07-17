@@ -437,9 +437,9 @@ while running:
     my_square2.y += motion2[1] * 10
 
 
-    if joysticks != []:
-        player_map[0].update(player_motion=motion, move_fast=joysticks[0].get_button(0))
-        player_map[1].update(player_motion=motion2, move_fast=joysticks[1].get_button(0))
+    # if joysticks != []:
+    player_map[0].update(player_motion=motion, move_fast=joysticks[0].get_button(0))
+    player_map[1].update(player_motion=motion2, move_fast=joysticks[1].get_button(0))
 
     # Look at every event in the queue
     for event in pg.event.get():
