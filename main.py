@@ -10,29 +10,8 @@ import os
 # Updated to conform to flake8 and black standards
 from pygame.locals import *
 
-# from pygame.locals import (
-#     RLEACCEL,
-#     K_UP,
-#     K_DOWN,
-#     K_LEFT,
-#     K_RIGHT,
-#     K_w,
-#     K_a,
-#     K_s,
-#     K_d,
-#     K_r,
-#     K_e,
-#     K_t,
-#     K_y,
-#     K_q,
-#     K_COMMA,
-#     K_MINUS,
-#     K_PERIOD,
-#     K_SPACE,
-#     K_LSHIFT,
-#     K_ESCAPE,
-#     KEYDOWN,
-#     QUIT,
+# from pygame.locals import (RLEACCEL,K_UP,K_DOWN,K_LEFT,K_RIGHT,K_w,K_a,K_s,K_d,K_r,K_e,K_t,
+#     K_y,K_q,K_COMMA,K_MINUS,K_PERIOD,K_SPACE,K_LSHIFT,K_ESCAPE,KEYDOWN, QUIT
 # )
 
 pg.joystick.init()
@@ -99,27 +78,22 @@ class Player(pg.sprite.Sprite):
         ))
 
     # Move the sprite based on keypresses
-    def update(self, pressed_keys=None, player_motion=None, move_fast=False):
+    def update(self, pressed_keys=None, player_walking=False, player_running=False):
         if pressed_keys is None:
             pressed_keys = []
-        if player_motion is None:
-            player_motion = [0, 0]
 
         speed = WALKING_SPEED
 
         #### Players controlled with Joystick
-
-        if move_fast:
+        if player_running:
             speed = RUNNING_SPEED
-
-        # print("Speed", speed)
-        # Player 1
-        # if self.player_number == 0:
-        self.rect.move_ip(player_motion[0]*speed, player_motion[1]*speed)
+            self.rect.move_ip(speed, 0)
+        elif player_walking:
+            self.rect.move_ip(speed, 0)
 
 
         ####Players controlled with keyboard
-        if pressed_keys:
+        if len(pressed_keys) > 0:
             # Player 2
             left_key = K_COMMA
             right_key = K_MINUS
@@ -180,32 +154,46 @@ class Scope(pg.sprite.Sprite):
         self.number_of_shots = 1
 
     # Move the sprite based on keypresses
-    def update(self, pressed_keys):
+    def update(self, pressed_keys=None, scope_motion=None, shooting=False):
+        if pressed_keys is None:
+            pressed_keys = []
+        if scope_motion is None:
+            scope_motion = [0, 0]
+
         speed = 9
 
-        # Player 1
-        left_key = K_a
-        right_key = K_d
-        up_key = K_w
-        down_key = K_s
-        shoot_key = K_q
+        #### Players controlled with Joystick
 
-        # Player 2
-        if self.player_number == 1:
-            left_key = K_LEFT
-            right_key = K_RIGHT
-            up_key = K_UP
-            down_key = K_DOWN
-            shoot_key = K_SPACE
+        self.rect.move_ip(scope_motion[0] * speed, scope_motion[1] * speed)
 
-        if pressed_keys[left_key]:
-            self.rect.move_ip(-speed, 0)
-        if pressed_keys[right_key]:
-            self.rect.move_ip(speed, 0)
-        if pressed_keys[up_key]:
-            self.rect.move_ip(0, -speed)
-        if pressed_keys[down_key]:
-            self.rect.move_ip(0, speed)
+        ####Players controlled with keyboard
+        if len(pressed_keys) > 0:
+            # keyboard Player 1
+            left_key = K_a
+            right_key = K_d
+            up_key = K_w
+            down_key = K_s
+            shoot_key = K_q
+
+            # keyboard Player 2
+            if self.player_number == 1:
+                left_key = K_LEFT
+                right_key = K_RIGHT
+                up_key = K_UP
+                down_key = K_DOWN
+                shoot_key = K_SPACE
+
+            if pressed_keys[left_key]:
+                self.rect.move_ip(-speed, 0)
+            if pressed_keys[right_key]:
+                self.rect.move_ip(speed, 0)
+            if pressed_keys[up_key]:
+                self.rect.move_ip(0, -speed)
+            if pressed_keys[down_key]:
+                self.rect.move_ip(0, speed)
+
+            if pressed_keys[shoot_key]:
+                shooting = True
 
         # Keep scope on the screen
         if self.rect.center[0] < 0:
@@ -218,7 +206,7 @@ class Scope(pg.sprite.Sprite):
             self.rect.center = (self.rect.center[0], SCREEN_HEIGHT)
 
         # Shooting
-        if pressed_keys[shoot_key] and self.number_of_shots > 0:
+        if shooting and self.number_of_shots > 0:
             center_pos = self.rect.center
             collision_sound.play()
 
@@ -436,10 +424,16 @@ while running:
     my_square2.x += motion2[0] * 10
     my_square2.y += motion2[1] * 10
 
+    motions = [motion, motion2]
 
-    # if joysticks != []:
-    player_map[0].update(player_motion=motion, move_fast=joysticks[0].get_button(0))
-    player_map[1].update(player_motion=motion2, move_fast=joysticks[1].get_button(0))
+
+    for i, js in enumerate(joysticks):
+        player_map[i].update(player_walking=js.get_button(0), player_running=js.get_button(3))
+
+        # Shooting with left or right bumper button (i.e L1/LB and R1/RB)
+        shooting = js.get_button(4) or js.get_button(5)
+        scope_map[i].update(scope_motion=motions[i], shooting=shooting)
+
 
     # Look at every event in the queue
     for event in pg.event.get():
@@ -453,7 +447,7 @@ while running:
         elif event.type == QUIT:
             running = False
 
-        # Should we add a new cloud?
+        # Should we add a new cloud?-----------
         elif event.type == ADDCLOUD:
             # Create the new cloud, and add it to our sprite groups
             new_cloud = Cloud()
@@ -514,6 +508,8 @@ while running:
             # print("motion2", motion2)
 
         elif event.type == JOYHATMOTION:
+            print(event)
+        elif event.type == CONTROLLER_AXIS_TRIGGERRIGHT or CONTROLLER_AXIS_TRIGGERLEFT:
             print(event)
         # elif event.type == JOYDEVICEADDED:
         #     joysticks = [pg.joystick.Joystick(i) for i in range(pg.joystick.get_count())]
