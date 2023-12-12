@@ -31,8 +31,8 @@ red = (255, 0, 0)
 
 
 # Define constants for the screen width and height
-SCREEN_WIDTH = 1700
-SCREEN_HEIGHT = 900
+SCREEN_WIDTH = 1500
+SCREEN_HEIGHT = 800
 
 
 def get_random_guy_sprite_path():
