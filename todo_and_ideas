@@ -1,0 +1,55 @@
+
+Todos:
+	Main:
+	[x] kill scope when player dies
+	controller support, 4 players
+	start menu:
+		- choose number of players
+		- show controls
+	End of game screen:
+		- show a still picture of the finish line
+		- show number of wins for each player
+		- ask to replay or main menu
+	Settings:
+		- Menu to make custom controls
+
+
+
+ideas:
+
+screen saver moving free shot zone
+
+bots random hopper, så man også skal hoppe for at efterligne dem. Eller blinker når de er omkring halvvejs på banen.
+
+Game mode where bots die if they are about to win
+
+players can move freely but bots can only move forward and backward
+
+Chicken horse, sætter traps og hvar kasser skal være
+
+
+
+Other:
+
+
+
+
+mobile game with same concept but where it is geckos crawling up a wall and you have to shoot them with a slingshot that is hard to aim with. You start with 3+ shots because of hard aiming.
+
+
+
+________________________________________
+###Notes:
+
+List of buttons:
+RLEACCEL,K_UP,K_DOWN,K_LEFT,K_RIGHT,K_w,K_a,K_s,K_d,K_r,K_e,K_t,
+K_y,K_q,K_COMMA,K_MINUS,K_PERIOD,K_SPACE,K_LSHIFT,K_ESCAPE,KEYDOWN, QUIT
+
+
+
+
+
+
+
+
+
