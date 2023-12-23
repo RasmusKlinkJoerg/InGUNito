@@ -4,6 +4,7 @@ import pygame as pg
 # Import pygame.locals for easier access to key coordinates
 from pygame.locals import *
 
+import config
 import utilities
 from Bot import Bot
 from Cloud import Cloud
@@ -18,7 +19,7 @@ for joystick in joysticks:
     print(joystick.get_name())
 
 # Constants
-NUMBER_OF_PLAYERS = utilities.NUMBER_OF_PLAYERS
+NUMBER_OF_PLAYERS = config.NUMBER_OF_PLAYERS
 number_of_units = utilities.number_of_units
 
 # Initialize pg
@@ -101,15 +102,30 @@ while running:
     motions = [motion, motion2]
 
     for i, js in enumerate(joysticks):
-        player_map[i].update(player_walking=js.get_button(0), player_running=js.get_button(3))
+        if js.get_name() == "Rock Candy Wireless Gamepad for PS3":
+            player_walking = js.get_button(1)
+            player_running = js.get_button(3)
+            shooting = js.get_button(4) or js.get_button(5)
+        elif js.get_name() == "PS4 Controller":
+            player_walking = js.get_button(0)
+            player_running = js.get_button(3)
+            shooting = js.get_button(9) or js.get_button(10)
+        else:
+            print("!!!!!!XXXXXX---------- Unknown controller ----------XXXXXX!!!!!!")
+            player_walking = js.get_button(0)
+            player_running = js.get_button(3)
+            shooting = js.get_button(4) or js.get_button(5) or js.get_button(9) or js.get_button(10)
+        player_map[i].update(player_walking=player_walking, player_running=player_running)
         # Shooting with left or right bumper button (i.e L1/LB and R1/RB)
         # on PS4 controllers it is js.get_button(9) or js.get_button(10)
-        # on Xbox 360 controllers it is js.get_button(4) or js.get_button(5)
-        shooting = js.get_button(4) or js.get_button(5) or js.get_button(9) or js.get_button(10)
+        # on Xbox 360 (rockcandy ps3) controllers it is js.get_button(4) or js.get_button(5)
         scope_map[i].update(players, bots, scopes, scope_motion=motions[i], shooting=shooting)
 
     # Look at every event in the queue
     for event in pg.event.get():
+
+        print(event.type)
+
         # Did the user hit a key?
         if event.type == KEYDOWN:
             # Was it the Escape key? If so, stop the loop
@@ -147,14 +163,21 @@ while running:
 
         elif event.type == JOYHATMOTION:
             print(event)
-        elif event.type == CONTROLLER_AXIS_TRIGGERRIGHT or CONTROLLER_AXIS_TRIGGERLEFT:
-            print(event)
+
         elif event.type == JOYDEVICEADDED:
             joysticks = [pg.joystick.Joystick(i) for i in range(pg.joystick.get_count())]
             for joystick in joysticks:
-                print(joystick.get_name())
+                print("Joystic name: ", joystick.get_name())
+
         elif event.type == JOYDEVICEREMOVED:
             joysticks = [pg.joystick.Joystick(i) for i in range(pg.joystick.get_count())]
+            for joystick in joysticks:
+                print("Joystic name: ", joystick.get_name())
+
+        elif event.type == CONTROLLER_AXIS_TRIGGERRIGHT or CONTROLLER_AXIS_TRIGGERLEFT:
+            # print("TRIGGER BAM BANG", event)
+            # print(event)
+            pass
 
     # Update players controlled by keyboard. Get the set of keys pressed and check for user input
     pressed_keys = pg.key.get_pressed()

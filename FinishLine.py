@@ -2,7 +2,7 @@
 # Import the pygame module
 import pygame as pg
 
-
+import config
 import utilities
 from utilities import get_random_guy_sprite_path
 
@@ -10,8 +10,8 @@ from utilities import get_random_guy_sprite_path
 red = utilities.red
 
 # Define constants for the screen width and height
-SCREEN_WIDTH = utilities.SCREEN_WIDTH
-SCREEN_HEIGHT = utilities.SCREEN_HEIGHT
+SCREEN_WIDTH = config.SCREEN_WIDTH
+SCREEN_HEIGHT = config.SCREEN_HEIGHT
 
 
 class FinishLine(pg.sprite.Sprite):

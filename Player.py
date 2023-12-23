@@ -4,16 +4,17 @@ import pygame as pg
 # Import pygame.locals for easier access to key coordinates
 from pygame.locals import *
 
+import config
 import utilities
 from utilities import get_random_guy_sprite_path
 
 
 # Define constants for the screen width and height
-SCREEN_WIDTH = utilities.SCREEN_WIDTH
-SCREEN_HEIGHT = utilities.SCREEN_HEIGHT
+SCREEN_WIDTH = config.SCREEN_WIDTH
+SCREEN_HEIGHT = config.SCREEN_HEIGHT
 
-WALKING_SPEED = utilities.WALKING_SPEED
-RUNNING_SPEED = utilities.RUNNING_SPEED
+WALKING_SPEED = config.WALKING_SPEED
+RUNNING_SPEED = config.RUNNING_SPEED
 
 number_of_units = utilities.number_of_units
 
@@ -54,15 +55,15 @@ class Player(pg.sprite.Sprite):
             self.rect.move_ip(speed, 0)
 
         ####################################
-        # Players controlled with Joystick #
+        # Players controlled with Keyboard #
         ####################################
         if len(pressed_keys) > 0:
-            # Player 2
+            # Player 1
             left_key = K_COMMA
             right_key = K_MINUS
             running_key = K_PERIOD
 
-            # Player 3
+            # Player 2
             if self.player_number == 2:
                 left_key = K_r
                 right_key = K_y

@@ -8,12 +8,13 @@ from pygame.locals import *
 # Import random for random numbers
 import random
 
+import config
 import utilities
 
 
 # Define constants for the screen width and height
-SCREEN_WIDTH = utilities.SCREEN_WIDTH
-SCREEN_HEIGHT = utilities.SCREEN_HEIGHT
+SCREEN_WIDTH = config.SCREEN_WIDTH
+SCREEN_HEIGHT = config.SCREEN_HEIGHT
 
 screen = utilities.screen
 

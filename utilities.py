@@ -1,5 +1,7 @@
 import pygame as pg
 
+import config
+
 # Import random for random numbers
 import random
 
@@ -9,23 +11,15 @@ import os
 red = (255, 0, 0)
 black = (0, 0, 0)
 
-# Define constants for the screen width and height
-SCREEN_WIDTH = 1200#1700
-SCREEN_HEIGHT = 700#900
 
-WALKING_SPEED = 2
-RUNNING_SPEED = 4
 
-NUMBER_OF_PLAYERS = 4
-NUMBER_OF_BOTS = 15
-
-number_of_units = NUMBER_OF_PLAYERS + NUMBER_OF_BOTS
+number_of_units = config.NUMBER_OF_PLAYERS + config.NUMBER_OF_BOTS
 
 unit_permutation = random.sample(list(range(number_of_units)), number_of_units)
 
 # Create the screen object
 # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
-screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen = pg.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
 
 
 # Setup for sounds, defaults are good

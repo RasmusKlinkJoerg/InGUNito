@@ -4,17 +4,19 @@ import pygame as pg
 import utilities
 from utilities import get_random_guy_sprite_path
 
+import config
+
 # Import random for random numbers
 import random
 
 # Define constants for the screen width and height
-SCREEN_WIDTH = utilities.SCREEN_WIDTH
-SCREEN_HEIGHT = utilities.SCREEN_HEIGHT
+SCREEN_WIDTH = config.SCREEN_WIDTH
+SCREEN_HEIGHT = config.SCREEN_HEIGHT
 
-WALKING_SPEED = utilities.WALKING_SPEED
+WALKING_SPEED = config.WALKING_SPEED
 
-NUMBER_OF_PLAYERS = utilities.NUMBER_OF_PLAYERS
-NUMBER_OF_BOTS = utilities.NUMBER_OF_BOTS
+NUMBER_OF_PLAYERS = config.NUMBER_OF_PLAYERS
+NUMBER_OF_BOTS = config.NUMBER_OF_BOTS
 
 number_of_units = utilities.number_of_units
 
