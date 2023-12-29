@@ -3,12 +3,15 @@ import sys
 from Button import Button
 from main import run_game
 
+import utilities
+
 # Inspiration from baraltech - https://www.youtube.com/watch?v=GMBqjxcKogA
 
 pygame.init()
 
-SCREEN_WIDTH = 1280 - 100
-SCREEN_HEIGHT = 720 - 100
+# Define constants for the screen width and height
+SCREEN_WIDTH = utilities.SCREEN_WIDTH
+SCREEN_HEIGHT = utilities.SCREEN_HEIGHT
 
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Menu")
