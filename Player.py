@@ -63,7 +63,7 @@ class Player(pg.sprite.Sprite):
             running_key = K_PERIOD
 
             # Player 3
-            if self.player_number == 2:
+            if self.player_number == 1:
                 left_key = K_r
                 right_key = K_y
                 running_key = K_t
