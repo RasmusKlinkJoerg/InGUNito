@@ -10,6 +10,8 @@ from FinishLine import FinishLine
 from Player import Player
 from Scope import Scope
 
+#testing git
+
 # Constants
 NUMBER_OF_PLAYERS = config.NUMBER_OF_PLAYERS
 number_of_units = utilities.number_of_units
